@@ -1,16 +1,19 @@
 # Triage Labels
 
-The skills speak in terms of five canonical triage roles. This file maps those roles to the actual label strings used in this repo's issue tracker.
+The skills speak in terms of six canonical triage roles. This file maps those roles to the actual label strings used in this repo's issue tracker.
 
-| Label in mattpocock/skills | Label in our tracker | Meaning                                  |
-| -------------------------- | -------------------- | ---------------------------------------- |
-| `needs-triage`             | `needs-triage`       | Maintainer needs to evaluate this issue  |
-| `needs-info`               | `needs-info`         | Waiting on reporter for more information |
-| `ready-for-agent`          | `ready-for-agent`    | Fully specified, ready for an AFK agent  |
-| `ready-for-human`          | `ready-for-human`    | Requires human implementation            |
-| `wontfix`                  | `wontfix`            | Will not be actioned                     |
+| Label in mattpocock/skills | Label in our tracker    | Meaning                                                        |
+| -------------------------- | ----------------------- | -------------------------------------------------------------- |
+| `needs-triage`             | `needs-triage`          | Maintainer needs to evaluate this issue                        |
+| `needs-info`               | `needs-info`            | Waiting on reporter for more information                       |
+| `ready-for-agent`          | `ready-for-agent`       | Fully specified, ready for an AFK agent                        |
+| `ready-for-tdd-agent`      | `ready-for-tdd-agent`   | Fully specified, ready for a TDD-discipline agent (red→green)  |
+| `ready-for-human`          | `ready-for-human`       | Requires human implementation                                  |
+| `wontfix`                  | `wontfix`               | Will not be actioned                                           |
 
 When a skill mentions a role (e.g. "apply the AFK-ready triage label"), use the corresponding label string from this table.
+
+`ready-for-agent` and `ready-for-tdd-agent` are mutually exclusive eligibility labels. Apply `ready-for-tdd-agent` when the issue has clear behavioral acceptance criteria that should be implemented test-first — the `parallel-tdd` skill dispatches this pool. Apply `ready-for-agent` for everything else (refactors, chores, config, one-line fixes) — the `parallel-issues` skill dispatches that pool.
 
 Edit the right-hand column to match whatever vocabulary you actually use.
 
