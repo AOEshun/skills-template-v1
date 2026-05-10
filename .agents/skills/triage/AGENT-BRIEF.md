@@ -41,6 +41,7 @@ State what is out of scope. This prevents the agent from gold-plating or making 
 
 **Category:** bug / enhancement
 **Summary:** one-line description of what needs to happen
+**Complexity:** simple | medium | complex — one-line rationale
 
 **Current behavior:**
 Describe what happens now. For bugs, this is the broken behavior.
@@ -74,6 +75,7 @@ Be specific about edge cases and error conditions.
 
 **Category:** bug
 **Summary:** Skill description truncation drops mid-word, producing broken output
+**Complexity:** simple — isolated truncation logic, confirmed repro, two acceptance criteria
 
 **Current behavior:**
 When a skill description exceeds 1024 characters, it is truncated at exactly
@@ -109,6 +111,7 @@ and append "..." to indicate truncation.
 
 **Category:** enhancement
 **Summary:** Add `.out-of-scope/` directory support for tracking rejected feature requests
+**Complexity:** medium — multiple files touched (triage workflow + new directory convention), follows existing markdown patterns, four acceptance criteria
 
 **Current behavior:**
 When a feature request is rejected, the issue is closed with a `wontfix` label
