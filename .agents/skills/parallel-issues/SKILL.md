@@ -77,7 +77,13 @@ Each iteration runs steps 4–9. After step 9, decide:
 Print the iteration header before dispatch:
 
 ```
-=== Iteration <K> — dispatching <count>: #<n1>, #<n2>, ... ===
+=== Iteration <K> — dispatching <count>: #<n1> (<tier1>/<Model1>), #<n2> (<tier2>/<Model2>), ... ===
+```
+
+For unscored issues, use `unscored → Sonnet` in the header and print a warning line for each one immediately after the header:
+
+```
+⚠ Warning: #<N> has no complexity:* label — defaulting to Sonnet. Add a complexity label to make dispatch auditable.
 ```
 
 ### 4. Load issue graph
@@ -96,9 +102,15 @@ gh issue list --state closed --json number,title,labels --limit 200
 
 For each open issue, parse:
 
-- **Labels**: extract names. Identify `ready-for-agent`, `ready-for-human`.
+- **Labels**: extract names. Identify `ready-for-agent`, `ready-for-human`. Also collect any `complexity:*` labels (e.g. `complexity:simple`, `complexity:medium`, `complexity:complex`).
 - **Blocked by**: find the `## Blocked by` (case-insensitive) heading, take the next 5 lines, extract every `#N`.
 - **Parent**: find `## Parent`, take the next 3 lines, extract `#N`. Parent references are NOT blockers.
+- **Complexity tier**: from the collected `complexity:*` labels, determine the tier:
+  - Exactly one `complexity:simple` → tier `simple`, model `"haiku"`.
+  - Exactly one `complexity:medium` → tier `medium`, model `"sonnet"`.
+  - Exactly one `complexity:complex` → tier `complex`, model `"opus"`.
+  - No `complexity:*` label → tier `unscored`, model `"sonnet"` (default). Record for warning output.
+  - **More than one `complexity:*` label → refuse, name the issue, and exit immediately. Do not dispatch anything.**
 
 If any open `ready-for-agent` issue has a `## Blocked by` section that fails to parse cleanly, refuse and name the issue. Do not silently misclassify.
 
@@ -115,7 +127,9 @@ For each open `ready-for-agent` issue:
 ### 6. Apply argument filter and tie-break
 
 - If user passed explicit issue numbers: keep only those. If any specified issue is not in the eligible set, refuse and explain why (which blocker, which label).
-- If `--plan` is set: print the plan (eligible / deferred / stalled-on-human / chosen-N with tie-break reason) and exit. No worktrees, no agents.
+- If `--plan` is set: print the plan (eligible / deferred / stalled-on-human / chosen-N with tie-break reason) and exit. No worktrees, no agents. Each eligible issue is shown with its resolved tier and model in parentheses:
+  - Scored issues: `#<N> (<tier> → <Model>)` — e.g. `#12 (complex → Opus)`.
+  - Unscored issues: `#<N> (unscored → Sonnet, defaulted)` — so the maintainer can spot scoring gaps before dispatch.
 - If more than 4 issues are eligible: sort by descending **transitive downstream count** (number of issues that have this issue, directly or via chain, in their `## Blocked by`), then by ascending issue number. Take the top 4.
 
 On the **first** iteration, if more than 4 were eligible, pause and require user confirmation before continuing. On subsequent iterations no confirmation is needed (the user already opted into the loop).
@@ -132,9 +146,14 @@ For each selected issue `#N`:
   git worktree add -b agent/issue-<N>-<slug> .worktrees/issue-<N> <default-branch>
   ```
 - Build the subagent prompt from `agent-prompt.md` by substituting the placeholders. Inline the full issue body fetched in §4.
+- Resolve the model for this issue from the complexity tier determined in §4:
+  - `complexity:simple` → `"haiku"`
+  - `complexity:medium` → `"sonnet"`
+  - `complexity:complex` → `"opus"`
+  - unscored (no `complexity:*` label) → `"sonnet"` (default; a warning was already printed in the iteration header)
 - Spawn the subagent via the `Agent` tool with:
   - `subagent_type: "general-purpose"`
-  - `model: "sonnet"`
+  - `model`: the resolved model string for this issue (e.g. `"haiku"`, `"sonnet"`, or `"opus"`)
   - `run_in_background: true`
   - `description: "Implement issue #<N>"`
   - `prompt`: the rendered template
@@ -198,9 +217,11 @@ For the failed issue `#N`:
    Automated <verification|review|merge> failed — relabeled needs-info.
    PR: #<M>           (omit if no PR was opened)
    Branch: agent/issue-<N>-<slug>
+   Tier: <tier> (<model>)
    <Cause line — see review-rubric.md for review-fail / merge-fail formats>
    Detail on the PR. (omit if no PR was opened)
    ```
+   where `<tier>` is `simple`, `medium`, `complex`, or `unscored`, and `<model>` is the model that was dispatched (or would have been dispatched) for this issue. The `complexity:*` label on the issue is **not** removed and **not** auto-bumped during bail; only the `ready-for-agent` → `needs-info` label transition (step 1 above) is applied.
 3. **PR comment** (only if PR was opened, keyed by sha + marker):
    ```
    <!-- parallel-issues-skill:<marker>:<pr-head-sha> -->
