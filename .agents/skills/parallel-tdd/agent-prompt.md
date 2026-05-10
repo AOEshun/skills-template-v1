@@ -49,6 +49,14 @@ Each item below is one TDD cycle. In your PR body, reproduce this list and mark 
 
 {{ACCEPTANCE_CRITERIA_CHECKLIST}}
 
+## UI verification (if present in the issue body)
+
+If the issue body contains a `## UI verification` section, treat its `Route:`, `Preconditions:`, and numbered steps as **additional contract** alongside the acceptance criteria — the orchestrator will run `ui-verify` against your PR before merging. Your implementation must make every numbered step visibly true at that route, under those preconditions.
+
+UI verification steps are not TDD cycles. Do not invent test code to satisfy them at the unit level — they're verified post-hoc against the running app. Use them as a behavioral spec the AC items must collectively deliver. If a step cannot be made true without out-of-scope changes, bail per the scope-discipline rules below; do not rephrase or skip steps.
+
+You do not run `ui-verify` yourself, and do not copy the `## UI verification` block into your PR body — the orchestrator reads it from the issue.
+
 ## TDD log (mandatory)
 
 Every red-green cycle you complete must be recorded in your PR body under a `## TDD log` heading, in this format:

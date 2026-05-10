@@ -66,6 +66,46 @@ Be specific about edge cases and error conditions.
 - Adjacent feature that might seem related but is separate
 ```
 
+If the issue carries the `ui-heavy` label, append a `## UI verification` block to the brief — see [the UI verification section](#ui-verification-only-for-ui-heavy-issues) below.
+
+## UI verification (only for `ui-heavy` issues)
+
+When `ui-heavy` is applied, append this block to the agent brief verbatim. The dispatched subagent reads it as additional contract; the orchestrator's `ui-verify` skill executes it against the worktree's running dev server before merging.
+
+```markdown
+## UI verification
+
+**Route:** /<path on the dev server, starting with `/`>
+**Preconditions:** <one line — `none` if a fresh tab suffices, otherwise cite a documented seed/login helper from CLAUDE.md's `### UI verification config` block>
+
+1. <Observable behavior 1, in the issue's vocabulary.>
+2. <Observable behavior 2.>
+3. ...
+```
+
+**Authoring rules:**
+
+- **Steps are observable behaviors, not selectors.** Write what a human reviewer would see. `The user's full name appears in the top-right header.` is right; `[data-testid="user-name"] has innerText "Jane Doe"` is wrong (couples the spec to selectors the implementation hasn't made yet).
+- **One step = one observable claim.** Compound steps split into two. The verifier evaluates one step at a time.
+- **Steps may include interactions.** `Clicking "Profile" navigates to /profile and the email field is editable.` is fine — one cause, one outcome.
+- **Refuse to apply `ui-heavy` if preconditions aren't automatable** from a clean tab using only the project's documented helpers. If a seed routine is missing, document one in `CLAUDE.md` first or fall back to `ready-for-agent` / `ready-for-tdd-agent` without UI verification.
+
+See `.agents/skills/ui-verify/VERIFICATION-FORMAT.md` for the full grammar.
+
+### UI verification — worked example
+
+```markdown
+## UI verification
+
+**Route:** /dashboard
+**Preconditions:** Logged in as a user with at least one project. (See seed-user in CLAUDE.md.)
+
+1. The user's full name appears in the top-right header.
+2. Clicking the avatar opens a dropdown with "Settings" and "Sign out".
+3. The dropdown has a new "Profile" link, between "Settings" and "Sign out".
+4. Clicking "Profile" navigates to /profile and the email field is editable.
+```
+
 ## Examples
 
 ### Good agent brief (bug)

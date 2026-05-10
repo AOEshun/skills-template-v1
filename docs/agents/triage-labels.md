@@ -22,6 +22,18 @@ When a skill mentions a role (e.g. "apply the AFK-ready triage label"), use the 
 
 Apply to issues whose acceptance criteria are testable behaviors (state machines, detectors, sizing/math, persistence). Skip when the AC is dominated by visualization/UX work where unit-test discipline maps poorly.
 
+## UI verification label
+
+`ui-heavy` is an additive label, orthogonal to `ready-for-agent` / `ready-for-tdd-agent`. Apply it when the issue's outcome is judged primarily by what the user sees in a browser — new components, layout changes, visible state transitions — and a code-only review would miss whether the change actually renders correctly.
+
+| Canonical label | Label in our tracker | Meaning                                                          |
+| --------------- | -------------------- | ---------------------------------------------------------------- |
+| `ui-heavy`      | `ui-heavy`           | PR must pass `ui-verify` (Chrome MCP–driven) before merging      |
+
+When `ui-heavy` is applied, the agent brief must include a `## UI verification` block (route + preconditions + numbered observable-behavior steps) — see `.agents/skills/ui-verify/VERIFICATION-FORMAT.md`. The `parallel-issues` and `parallel-tdd` orchestrators run `.agents/skills/ui-verify/SKILL.md` as a pre-merge gate against the PR's worktree.
+
+Refuse to apply `ui-heavy` if the issue's preconditions can't be reached automatically from a clean tab. Triage should either grill for an automatable seed routine (and document it in `CLAUDE.md`'s `### UI verification config` block) or skip the label.
+
 ## Complexity Labels
 
 Some skills (e.g. `/parallel-issues`, `/parallel-tdd`) route issues to different model tiers based on complexity. The mapping:

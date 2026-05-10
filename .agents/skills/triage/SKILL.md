@@ -38,6 +38,8 @@ Every triaged issue should carry exactly one category role and one state role. `
 
 Issues moving to `ready-for-agent` **or** `ready-for-tdd-agent` also carry exactly one complexity tier label (`complexity:simple`, `complexity:medium`, or `complexity:complex`). If an issue already has more than one `complexity:*` label, refuse to proceed, name the issue, and ask the maintainer to resolve the conflict before continuing.
 
+Some issues additionally carry the `ui-heavy` label — an orthogonal, additive flag that triggers a `ui-verify` pre-merge gate in `parallel-issues` / `parallel-tdd`. Apply it when the outcome is judged primarily by what's rendered in a browser. See [the UI-heavy section](#ui-heavy-additive) below.
+
 These are canonical role names — the actual label strings used in the issue tracker may differ. The mapping should have been provided to you - run `/setup-skills` if not.
 
 State transitions: an unlabeled issue normally goes to `needs-triage` first; from there it moves to `needs-info`, `ready-for-agent`, `ready-for-tdd-agent`, `ready-for-human`, or `wontfix`. `needs-info` returns to `needs-triage` once the reporter replies. The maintainer can override at any time — flag transitions that look unusual and ask before proceeding.
@@ -50,6 +52,31 @@ When proposing a `ready-*` outcome, choose between the two:
 - **`ready-for-agent`** for everything else: refactors, chores, config edits, dependency bumps, doc updates, one-line bug fixes where writing a regression test is overkill, and anything where "test-first" doesn't naturally apply.
 
 If you propose `ready-for-tdd-agent`, the issue's `## Acceptance criteria` section must contain at least one bullet item phrased as an observable behavior. If the AC section is missing, vague, or implementation-shaped (e.g. "refactor X module") rather than behavioral, propose `ready-for-agent` instead — or grill the reporter to extract behavioral criteria.
+
+### `ui-heavy` (additive)
+
+Apply `ui-heavy` to any `ready-*` issue whose outcome is primarily judged by what a user sees in a browser — new visible components, layout changes, state transitions a code review can't sanity-check. The `parallel-issues` and `parallel-tdd` orchestrators call the `ui-verify` skill as a pre-merge gate when this label is present.
+
+When you apply `ui-heavy`, the agent brief's `## UI verification` section becomes mandatory:
+
+```markdown
+## UI verification
+
+**Route:** /<path>
+**Preconditions:** <one line — `none` if a fresh tab suffices>
+
+1. <Observable behavior 1, in the issue's vocabulary.>
+2. <Observable behavior 2.>
+```
+
+See `.agents/skills/ui-verify/VERIFICATION-FORMAT.md` for the full grammar and worked examples.
+
+**Refuse to apply `ui-heavy` if any of the following hold** — fall back to `ready-for-agent` / `ready-for-tdd-agent` without the label, or grill until they're resolved:
+
+- Preconditions cannot be reached automatically from a clean tab. The verifier cannot do manual login, manual data seeding, or click through external SSO. If the project lacks an automatable seed/login helper, document one in `CLAUDE.md`'s `### UI verification config` block first.
+- The issue has no concrete route (e.g. "improve the dashboard somewhere"). The verifier needs an unambiguous URL path.
+- The visible behavior is too vague to write as numbered observable steps. Vague triage produces vague verification, which produces flaky gates.
+- The project's `CLAUDE.md` / `AGENTS.md` has no `### UI verification config` block at all. The verifier cannot start a dev server without it; without that block, no `ui-heavy` issue can be dispatched.
 
 ## Invocation
 
@@ -83,6 +110,7 @@ Show counts and a one-line summary per issue. Let the maintainer pick.
 5. **Apply the outcome:**
    - `ready-for-agent` — apply the `complexity:*` label that matches the agreed tier, then post an agent brief comment ([AGENT-BRIEF.md](AGENT-BRIEF.md)). The brief must include a `**Complexity:**` line with the tier and its one-line rationale. Do not apply a complexity label for any state other than `ready-for-agent` or `ready-for-tdd-agent`.
    - `ready-for-tdd-agent` — same as `ready-for-agent` (apply `complexity:*`, post the brief), with one additional requirement: the brief's `## Acceptance criteria` section must contain at least one behaviorally-phrased bullet item. Each AC item becomes one TDD cycle for the dispatched subagent. If the AC list is empty, vague, or implementation-shaped, do not apply this label — either grill for behavioral criteria first or fall back to `ready-for-agent`.
+   - `ui-heavy` (additive on `ready-for-agent` / `ready-for-tdd-agent`) — apply when the outcome is judged primarily by what's rendered. The brief must include a `## UI verification` block (route, preconditions, numbered observable-behavior steps); see the [`ui-heavy` section](#ui-heavy-additive) above for the full preconditions check. Refuse the label and grill if any preconditions can't be reached automatically from a clean tab, or if `CLAUDE.md` lacks a `### UI verification config` block.
    - `ready-for-human` — same structure as an agent brief, but note why it can't be delegated (judgment calls, external access, design decisions, manual testing).
    - `needs-info` — post triage notes (template below).
    - `wontfix` (bug) — polite explanation, then close.
@@ -96,6 +124,8 @@ If the maintainer says "move #42 to ready-for-agent" or "move #42 to ready-for-t
 The maintainer may include an inline complexity tier: "move #42 to ready-for-agent, complex" or "move #42 to ready-for-tdd-agent, medium". When a tier is provided inline, apply that `complexity:*` label directly without proposing or grilling. If no tier is given, propose one using the rubric below before applying the label.
 
 When moving directly to `ready-for-tdd-agent` without grilling, do a quick AC sanity check before applying the label: read the issue body, confirm `## Acceptance criteria` exists with at least one behaviorally-phrased item. If the section is missing or the items are implementation-shaped, flag it and ask the maintainer whether they want to grill for behavioral criteria, downgrade to `ready-for-agent`, or apply anyway with a warning.
+
+The maintainer may also include `ui-heavy` inline: "move #42 to ready-for-agent, complex, ui-heavy". When `ui-heavy` is requested without grilling, sanity-check the issue body for a `## UI verification` block and the project's `CLAUDE.md` for a `### UI verification config` block. If either is missing, flag it and ask whether to grill (to author the section), apply without `ui-heavy`, or apply anyway with a warning that the next `parallel-issues` / `parallel-tdd` run will refuse the issue.
 
 ## Needs-info template
 

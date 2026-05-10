@@ -2,7 +2,7 @@
 
 This is the single source of truth for the rubric the orchestrator applies to every subagent PR before merging. `SKILL.md` (the orchestrator) and `agent-prompt.md` (the subagent) both reference this file. Update only here; the other two files quote it.
 
-The rubric is a **5-step gate**. Any one item failing rejects the PR. The issue is relabeled `ready-for-agent` → `needs-info`, comments are posted on both the issue and the PR with the cause, and a human resolves it.
+The rubric is a **5-step gate** — extended to 6 steps when the issue carries the `ui-heavy` label (item 6 below is conditional). Any one item failing rejects the PR. The issue is relabeled `ready-for-agent` → `needs-info`, comments are posted on both the issue and the PR with the cause, and a human resolves it.
 
 ## 1. Mechanical structure
 
@@ -53,6 +53,16 @@ The diff is rejected if any of the following are present:
 - Suspiciously large diffs relative to the issue's scope (e.g. a 500-line diff for a one-line acceptance criterion).
 - Generated files committed without explanation.
 
+## 6. UI verification (only when issue is `ui-heavy`)
+
+If the issue carries the `ui-heavy` label, the orchestrator runs the `ui-verify` skill against the PR's worktree (see SKILL.md §8c.5). The skill returns one of:
+
+- `pass` — item 6 passes; continue to merge.
+- `fail(findings)` — item 6 fails. Each `findings` entry maps to one bullet under `**Findings:**` in the PR reject comment.
+- `error(reason)` — item 6 fails with cause `UI verification could not run: <reason>`. No per-step findings; the reason names the infra problem (missing config, port already bound, dev server didn't come up, etc.).
+
+The `ui-verify` skill itself owns the per-step evaluation prompts (`STEP-EVAL.md`) and the `## UI verification` block grammar (`VERIFICATION-FORMAT.md`). This rubric only documents the gate outcome and the comment shape.
+
 ## Comment formats on reject
 
 When the orchestrator rejects, it posts comments on both the **issue** and the **PR**, keyed by the PR's head sha so fixups don't permanently suppress.
@@ -87,6 +97,14 @@ For merge failures (conflict, CI red, branch protection), the marker is `paralle
 - `Merge conflict with #<M> (already merged this batch). Rebase your branch on main and resolve.`
 - `Required check '<workflow>' failed. See run: <URL>`
 - `Branch protection requires <rule> — merge can't be automated. Human merge needed.`
+
+For UI verification failures (item 6), the marker is `parallel-issues-skill:verify-fail:<sha>`. The cause line on the issue comment is `UI verification rejected — <K> step(s) failed.` for `fail`, or `UI verification could not run: <reason>.` for `error`. The PR comment includes per-step findings under `**Findings:**`, one bullet per `{step_index, expected, observed, evidence}` entry returned by `ui-verify`, in this shape:
+
+```
+- **Step <step_index>**: expected `<expected>` — observed: <observed>; evidence: <evidence>
+```
+
+For the synthetic vibes-check finding (`step_index: -1`), prefix the bullet with `Step -1 (vibes)` instead of `Step -1`.
 
 For mechanical-structure failures (rubric item 1), the legacy marker `parallel-issues-skill:fail` is used for backward compatibility.
 

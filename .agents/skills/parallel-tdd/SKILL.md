@@ -95,9 +95,13 @@ For each `### Cycle N` entry in the TDD log:
 
 At least one cycle in the PR must have a valid (test-only) red sha. If every red sha is invalid, the PR did horizontal slicing → item 3 fails with cause `No cycle has a test-only red sha — every cycle violates the test-first discipline.`
 
+### §8c.5 UI verification (inherited)
+
+If the issue carries the `ui-heavy` label, run `ui-verify` per `parallel-issues/SKILL.md` §8c.5. The only delta is the worktree path (`.worktrees/tdd-issue-<N>/`) and the bail marker prefix (`parallel-tdd-skill:verify-fail:<sha>`). Pre-flight (§1) inherits the parallel-issues `ui-heavy` config check unchanged — the `### UI verification config` block in CLAUDE.md is the same artifact for both orchestrators.
+
 ### §8a, §8d, §8e (delta)
 
-Identical to parallel-issues, except all comment markers use prefix `parallel-tdd-skill:` instead of `parallel-issues-skill:`.
+Identical to parallel-issues, except all comment markers use prefix `parallel-tdd-skill:` instead of `parallel-issues-skill:`. This includes `verify-fail` markers from §8c.5.
 
 ### §11 Parent-comment scan (delta)
 

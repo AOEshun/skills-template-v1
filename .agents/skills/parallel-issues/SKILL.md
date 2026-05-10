@@ -46,6 +46,7 @@ Refuse and exit with a precise reason if any of these fail:
 - **Open-PR check (skipped if `--resume` is set):** any open PR matches branch prefix `agent/issue-` — i.e. a previous batch has unmerged work. Check via `gh pr list --state open --search "head:agent/issue-" --json number,title,headRefName`.
 - **Branch-protection check:** `main` requires GitHub-side approving reviewers. Check via `gh api repos/:owner/:repo/branches/<default-branch>/protection 2>/dev/null | jq '.required_pull_request_reviews.required_approving_review_count // 0'`. If > 0, refuse — autonomous merging is incompatible with required-reviewer rules. (If the API returns 404, branch is unprotected; that's fine.)
 - `docs/agents/triage-labels.md` is missing.
+- **`ui-heavy` config check.** If any open `ready-for-agent` issue carries the `ui-heavy` label, `CLAUDE.md` (or `AGENTS.md`, whichever this project uses) must contain a `### UI verification config` block. Refuse if missing — the `ui-verify` skill cannot start a dev server without it. Tell the user to add the block per `.agents/skills/ui-verify/VERIFICATION-FORMAT.md`.
 
 Soft / auto-fix:
 
@@ -115,6 +116,8 @@ For each open issue, parse:
 If any open `ready-for-agent` issue has a `## Blocked by` section that fails to parse cleanly, refuse and name the issue. Do not silently misclassify.
 
 If any open issue carries both `ready-for-agent` and `ready-for-tdd-agent`, refuse, name the issue, and exit immediately. These labels are mutually exclusive (see `docs/agents/triage-labels.md`); fix the labels via the `triage` skill before re-running. This guard is shared with `parallel-tdd`, which inherits this section.
+
+For each `ready-for-agent` issue carrying the `ui-heavy` label, parse the body for a `## UI verification` section (case-insensitive heading). The section must exist with a non-empty `Route:` and at least one numbered step. If `ui-heavy` is set but the section is missing or malformed, refuse, name the issue, and exit immediately — re-triage to author the section before re-running. This guard is shared with `parallel-tdd`.
 
 ### 5. Compute eligibility
 
@@ -191,6 +194,28 @@ Run the rubric in `review-rubric.md` against the PR's diff:
 
 If any fail → bail per §8e with marker `parallel-issues-skill:review-fail:<pr-head-sha>`. Comment must enumerate which rubric items failed and quote offending hunks.
 
+#### 8c.5. UI verification (only when issue is `ui-heavy`)
+
+If the issue carries the `ui-heavy` label, run `ui-verify` against the PR's worktree before merging. Skip this step entirely for issues without the label.
+
+Inputs to `ui-verify` (per `.agents/skills/ui-verify/SKILL.md` — Inputs):
+
+- `issue_number` = `<N>`
+- `worktree_path` = `.worktrees/issue-<N>/`
+- `pr_head_sha` = the head sha captured in §8a
+- `issue_body` = the body fetched in §4 (which includes the `## UI verification` block)
+- `acceptance_criteria` = the checklist parsed in §4
+
+Follow `.agents/skills/ui-verify/SKILL.md` end-to-end. The worktree is still in place from §7 (it's only removed in §8d on success or §8e on failure), so the dev server has a clean checkout of the PR branch to run against.
+
+Translate the skill's return into bail decisions:
+
+- `pass` → continue to §8d merge.
+- `fail(findings)` → bail per §8e with marker `parallel-issues-skill:verify-fail:<pr-head-sha>`. The reject comment quotes each `findings` entry verbatim (see §8e and the rubric).
+- `error(reason)` → bail per §8e with the same marker but the cause line is `UI verification could not run: <reason>`. This signals "infra problem, investigate" rather than "diff problem, re-implement".
+
+Note: `ui-verify` is responsible for tearing down the dev server on every exit path. The orchestrator does not need to clean up port state here.
+
 #### 8d. Merge
 
 Run `gh pr merge <M> --squash --delete-branch`.
@@ -208,7 +233,7 @@ On success:
 - Delete local branch ref: `git branch -D agent/issue-<N>-<slug>` (remote already deleted by `--delete-branch`).
 - No comment posted on issue or PR. The squash-merge commit is the artifact; PR is auto-closed by GitHub.
 
-#### 8e. Bail procedure (used by 8a, 8b, 8c, 8d on failure)
+#### 8e. Bail procedure (used by 8a, 8b, 8c, 8c.5, 8d on failure)
 
 For the failed issue `#N`:
 
@@ -216,24 +241,25 @@ For the failed issue `#N`:
 2. **Issue comment** (if not already present, keyed by sha + marker):
    ```
    <!-- parallel-issues-skill:<marker>:<pr-head-sha> -->
-   Automated <verification|review|merge> failed — relabeled needs-info.
+   Automated <verification|review|ui-verify|merge> failed — relabeled needs-info.
    PR: #<M>           (omit if no PR was opened)
    Branch: agent/issue-<N>-<slug>
    Tier: <tier> (<model>)
-   <Cause line — see review-rubric.md for review-fail / merge-fail formats>
+   <Cause line — see review-rubric.md for review-fail / verify-fail / merge-fail formats>
    Detail on the PR. (omit if no PR was opened)
    ```
-   where `<tier>` is `simple`, `medium`, `complex`, or `unscored`, and `<model>` is the model that was dispatched (or would have been dispatched) for this issue. The `complexity:*` label on the issue is **not** removed and **not** auto-bumped during bail; only the `ready-for-agent` → `needs-info` label transition (step 1 above) is applied.
+   where `<tier>` is `simple`, `medium`, `complex`, or `unscored`, and `<model>` is the model that was dispatched (or would have been dispatched) for this issue. The `complexity:*` label and the `ui-heavy` label (if present) are **not** removed during bail; only the `ready-for-agent` → `needs-info` label transition (step 1 above) is applied.
 3. **PR comment** (only if PR was opened, keyed by sha + marker):
    ```
    <!-- parallel-issues-skill:<marker>:<pr-head-sha> -->
-   This PR was auto-<verification|review|merge>-checked and rejected. The associated issue has been relabeled `needs-info`.
+   This PR was auto-<verification|review|ui-verify|merge>-checked and rejected. The associated issue has been relabeled `needs-info`.
 
    **Failed items:**
    - **<rubric item or cause>**: <one-line reason>
 
-   **Findings:** (review-fail only — quote diff hunks)
-   <path>:<line> — <reason>
+   **Findings:** (review-fail / verify-fail only — quote diff hunks or per-step verifier findings)
+   <path>:<line> — <reason>                           (review-fail)
+   Step <N>: expected "<step text>" — observed: <NOTE>; evidence: <EVIDENCE>   (verify-fail)
    ```
 4. **Branch + worktree handling:**
    - If commits exist: leave branch in place; remove worktree only (`git worktree remove --force .worktrees/issue-<N>`).

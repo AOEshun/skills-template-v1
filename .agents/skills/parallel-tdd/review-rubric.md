@@ -47,12 +47,17 @@ See `parallel-issues/review-rubric.md` item 4.
 
 See `parallel-issues/review-rubric.md` item 5.
 
+## Item 6. UI verification (inherited)
+
+If the issue carries the `ui-heavy` label, item 6 from `parallel-issues/review-rubric.md` applies unchanged. The `ui-verify` skill is the same; only the bail marker prefix differs (see below).
+
 ## Reject comment formats
 
 Same shape as `parallel-issues/review-rubric.md`, with marker prefix `parallel-tdd-skill:` instead of `parallel-issues-skill:`:
 
 - Mechanical-structure failure: `parallel-tdd-skill:fail:<sha>` (legacy `parallel-tdd-skill:fail` for the no-PR case).
 - Review failure: `parallel-tdd-skill:review-fail:<sha>`.
+- UI verification failure: `parallel-tdd-skill:verify-fail:<sha>`.
 - Merge failure: `parallel-tdd-skill:merge-fail:<sha>`.
 - Parent slice landed: `parallel-tdd-skill:landed:<C>`.
 

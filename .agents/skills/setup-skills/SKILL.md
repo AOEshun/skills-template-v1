@@ -140,11 +140,12 @@ After writing the docs files, create the three complexity labels on GitHub if th
 gh label create "complexity:simple"  --description "Routed to Haiku"  --color "0E8A16" 2>/dev/null || true
 gh label create "complexity:medium"  --description "Routed to Sonnet" --color "FBCA04" 2>/dev/null || true
 gh label create "complexity:complex" --description "Routed to Opus"   --color "B60205" 2>/dev/null || true
+gh label create "ui-heavy"           --description "Pre-merge UI verification gate (ui-verify skill)" --color "5319E7" 2>/dev/null || true
 ```
 
-If the user renamed any label in Section B2, substitute the renamed string in place of the canonical name above.
+If the user renamed any label in Section B2, substitute the renamed string in place of the canonical name above. The `ui-heavy` label is bootstrapped unconditionally; if the user later renames it, update the column in `docs/agents/triage-labels.md` accordingly.
 
-Skip this step for non-GitHub issue trackers (GitLab, local markdown, other). Inform the user that complexity labels must be created manually in their tracker.
+Skip this step for non-GitHub issue trackers (GitLab, local markdown, other). Inform the user that complexity labels and the `ui-heavy` label must be created manually in their tracker.
 
 ### 5. Done
 

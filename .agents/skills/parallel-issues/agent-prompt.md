@@ -29,6 +29,14 @@ You must address every item below. In your PR body, reproduce this list and mark
 
 {{ACCEPTANCE_CRITERIA_CHECKLIST}}
 
+## UI verification (if present in the issue body)
+
+If the issue body contains a `## UI verification` section, treat its `Route:`, `Preconditions:`, and numbered steps as **additional contract** alongside the acceptance criteria. The orchestrator will run `ui-verify` against your PR before merging — your implementation must make every numbered step visibly true at that route, under those preconditions.
+
+You do **not** need to copy the `## UI verification` block into your PR body — the orchestrator reads it from the issue. You also do not run `ui-verify` yourself; that's the orchestrator's job.
+
+If, while implementing, you discover that a UI verification step cannot be made true without out-of-scope changes (e.g. a step references a route or component the issue doesn't actually scope), bail per the scope-discipline rules below. Do not silently rephrase or skip steps.
+
 ## Scope discipline (hard rules)
 
 - **In-scope ambiguity** (parameter names, internal structure, file layout choices not contradicted by the issue): make your best call, document it in `## Decisions made`.

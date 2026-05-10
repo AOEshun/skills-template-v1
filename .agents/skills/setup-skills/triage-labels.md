@@ -17,6 +17,18 @@ When a skill mentions a role (e.g. "apply the AFK-ready triage label"), use the 
 
 Edit the right-hand column to match whatever vocabulary you actually use.
 
+## UI verification
+
+`ui-heavy` is an additive label, orthogonal to `ready-for-agent` / `ready-for-tdd-agent`. The `parallel-issues` and `parallel-tdd` orchestrators call the `ui-verify` skill as a pre-merge gate when this label is present.
+
+| Canonical name | Label in our tracker | Meaning                                                     |
+| -------------- | -------------------- | ----------------------------------------------------------- |
+| `ui-heavy`     | `ui-heavy`           | PR must pass `ui-verify` (Chrome MCP–driven) before merging |
+
+Edit the right-hand column to match whatever vocabulary you actually use. Removing this row entirely is fine — the orchestrators only consult the label when it's present.
+
+`ui-heavy` issues require a `## UI verification` block in their agent brief and a `### UI verification config` block in `CLAUDE.md` / `AGENTS.md`. See `.agents/skills/ui-verify/VERIFICATION-FORMAT.md`.
+
 ## Complexity
 
 The skills use three complexity tiers to route issues to appropriately-capable models. This table maps canonical complexity names to the actual label strings used in this repo's issue tracker and the model each tier dispatches to.
