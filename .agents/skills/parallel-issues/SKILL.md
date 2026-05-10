@@ -46,7 +46,7 @@ Refuse and exit with a precise reason if any of these fail:
 - **Open-PR check (skipped if `--resume` is set):** any open PR matches branch prefix `agent/issue-` — i.e. a previous batch has unmerged work. Check via `gh pr list --state open --search "head:agent/issue-" --json number,title,headRefName`.
 - **Branch-protection check:** `main` requires GitHub-side approving reviewers. Check via `gh api repos/:owner/:repo/branches/<default-branch>/protection 2>/dev/null | jq '.required_pull_request_reviews.required_approving_review_count // 0'`. If > 0, refuse — autonomous merging is incompatible with required-reviewer rules. (If the API returns 404, branch is unprotected; that's fine.)
 - `docs/agents/triage-labels.md` is missing.
-- **`ui-heavy` config check.** If any open `ready-for-agent` issue carries the `ui-heavy` label, `CLAUDE.md` (or `AGENTS.md`, whichever this project uses) must contain a `### UI verification config` block. Refuse if missing — the `ui-verify` skill cannot start a dev server without it. Tell the user to add the block per `.agents/skills/ui-verify/VERIFICATION-FORMAT.md`.
+- **`ui-heavy` config check.** If any open issue in this skill's eligibility pool (`ready-for-agent` here; `parallel-tdd` applies the same check to `ready-for-tdd-agent` per its §1 delta) carries the `ui-heavy` label, `CLAUDE.md` (or `AGENTS.md`, whichever this project uses) must contain a `### UI verification config` block. Refuse if missing — the `ui-verify` skill cannot start a dev server without it. Tell the user to add the block per `.agents/skills/ui-verify/VERIFICATION-FORMAT.md`.
 
 Soft / auto-fix:
 
@@ -117,7 +117,7 @@ If any open `ready-for-agent` issue has a `## Blocked by` section that fails to 
 
 If any open issue carries both `ready-for-agent` and `ready-for-tdd-agent`, refuse, name the issue, and exit immediately. These labels are mutually exclusive (see `docs/agents/triage-labels.md`); fix the labels via the `triage` skill before re-running. This guard is shared with `parallel-tdd`, which inherits this section.
 
-For each `ready-for-agent` issue carrying the `ui-heavy` label, parse the body for a `## UI verification` section (case-insensitive heading). The section must exist with a non-empty `Route:` and at least one numbered step. If `ui-heavy` is set but the section is missing or malformed, refuse, name the issue, and exit immediately — re-triage to author the section before re-running. This guard is shared with `parallel-tdd`.
+For each issue in this skill's eligibility pool carrying the `ui-heavy` label (`ready-for-agent` here; `parallel-tdd` applies the same check to `ready-for-tdd-agent` per its §4 delta), parse the body for a `## UI verification` section (case-insensitive heading). The section must exist with a non-empty `Route:` and at least one numbered step. If `ui-heavy` is set but the section is missing or malformed, refuse, name the issue, and exit immediately — re-triage to author the section before re-running.
 
 ### 5. Compute eligibility
 

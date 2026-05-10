@@ -52,10 +52,13 @@ In addition to parallel-issues' pre-flight, also refuse if:
 
 - `docs/agents/triage-labels.md` does not contain `ready-for-tdd-agent`. Tell the user to add it (e.g. via the `triage` or `setup-skills` skill).
 - Open-PR check (skipped on `--resume`): any open PR matches branch prefix `tdd/issue-`. Check via `gh pr list --state open --search "head:tdd/issue-" --json number,title,headRefName`.
+- **`ui-heavy` config check** — applied to this skill's pool (`ready-for-tdd-agent`). If any open `ready-for-tdd-agent` issue carries the `ui-heavy` label, `CLAUDE.md` (or `AGENTS.md`) must contain a `### UI verification config` block. Same refusal text as parallel-issues §1.
 
 ### §4 Load issue graph (delta)
 
 Filter to `ready-for-tdd-agent` instead of `ready-for-agent`. Eligibility logic (§5) is otherwise identical — `## Blocked by` references can point to issues from either pool.
+
+The **`ui-heavy` parse check** from parallel-issues §4 (last paragraph) applies, with `ready-for-tdd-agent` substituted for `ready-for-agent`. For each `ready-for-tdd-agent` issue carrying `ui-heavy`, the body must have a `## UI verification` section with a non-empty `Route:` and at least one numbered step; refuse and name the issue otherwise. This is the same logic as parallel-issues — only the pool label differs.
 
 ### §6 Apply argument filter and tie-break (delta)
 
@@ -97,7 +100,7 @@ At least one cycle in the PR must have a valid (test-only) red sha. If every red
 
 ### §8c.5 UI verification (inherited)
 
-If the issue carries the `ui-heavy` label, run `ui-verify` per `parallel-issues/SKILL.md` §8c.5. The only delta is the worktree path (`.worktrees/tdd-issue-<N>/`) and the bail marker prefix (`parallel-tdd-skill:verify-fail:<sha>`). Pre-flight (§1) inherits the parallel-issues `ui-heavy` config check unchanged — the `### UI verification config` block in CLAUDE.md is the same artifact for both orchestrators.
+`ui-heavy` is additive on `ready-for-tdd-agent` exactly as it is on `ready-for-agent` — TDD-discipline issues that touch the UI are gated the same way. If the issue carries the label, run `ui-verify` per `parallel-issues/SKILL.md` §8c.5. The only deltas are the worktree path (`.worktrees/tdd-issue-<N>/`) and the bail marker prefix (`parallel-tdd-skill:verify-fail:<sha>`). The `### UI verification config` block in CLAUDE.md is the same artifact both orchestrators read.
 
 ### §8a, §8d, §8e (delta)
 
