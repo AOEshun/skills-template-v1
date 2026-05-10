@@ -35,6 +35,8 @@ Five **state** roles:
 
 Every triaged issue should carry exactly one category role and one state role. If state roles conflict, flag it and ask the maintainer before doing anything else.
 
+Issues moving to `ready-for-agent` also carry exactly one complexity tier label (`complexity:simple`, `complexity:medium`, or `complexity:complex`). If an issue already has more than one `complexity:*` label, refuse to proceed, name the issue, and ask the maintainer to resolve the conflict before continuing.
+
 These are canonical role names — the actual label strings used in the issue tracker may differ. The mapping should have been provided to you - run `/setup-skills` if not.
 
 State transitions: an unlabeled issue normally goes to `needs-triage` first; from there it moves to `needs-info`, `ready-for-agent`, `ready-for-human`, or `wontfix`. `needs-info` returns to `needs-triage` once the reporter replies. The maintainer can override at any time — flag transitions that look unusual and ask before proceeding.
@@ -62,14 +64,14 @@ Show counts and a one-line summary per issue. Let the maintainer pick.
 
 1. **Gather context.** Read the full issue (body, comments, labels, reporter, dates). Parse any prior triage notes so you don't re-ask resolved questions. Explore the codebase using the project's domain glossary, respecting ADRs in the area. Read `.out-of-scope/*.md` and surface any prior rejection that resembles this issue.
 
-2. **Recommend.** Tell the maintainer your category and state recommendation with reasoning, plus a brief codebase summary relevant to the issue. Wait for direction.
+2. **Recommend.** Tell the maintainer your category and state recommendation with reasoning, plus a brief codebase summary relevant to the issue. Also propose a complexity tier (`simple`, `medium`, or `complex`) with a one-line rationale using the rubric below. Low confidence is fine — bias up when uncertain. Wait for direction.
 
 3. **Reproduce (bugs only).** Before any grilling, attempt reproduction: read the reporter's steps, trace the relevant code, run tests or commands. Report what happened — successful repro with code path, failed repro, or insufficient detail (a strong `needs-info` signal). A confirmed repro makes a much stronger agent brief.
 
 4. **Grill (if needed).** If the issue needs fleshing out, run a `/grill-with-docs` session.
 
 5. **Apply the outcome:**
-   - `ready-for-agent` — post an agent brief comment ([AGENT-BRIEF.md](AGENT-BRIEF.md)).
+   - `ready-for-agent` — apply the `complexity:*` label that matches the agreed tier, then post an agent brief comment ([AGENT-BRIEF.md](AGENT-BRIEF.md)). The brief must include a `**Complexity:**` line with the tier and its one-line rationale. Do not apply a complexity label for any other state.
    - `ready-for-human` — same structure as an agent brief, but note why it can't be delegated (judgment calls, external access, design decisions, manual testing).
    - `needs-info` — post triage notes (template below).
    - `wontfix` (bug) — polite explanation, then close.
@@ -79,6 +81,8 @@ Show counts and a one-line summary per issue. Let the maintainer pick.
 ## Quick state override
 
 If the maintainer says "move #42 to ready-for-agent", trust them and apply the role directly. Confirm what you're about to do (role changes, comment, close), then act. Skip grilling. If moving to `ready-for-agent` without a grilling session, ask whether they want to write an agent brief.
+
+The maintainer may include an inline complexity tier: "move #42 to ready-for-agent, complex". When a tier is provided inline, apply that `complexity:*` label directly without proposing or grilling. If no tier is given, propose one using the rubric below before applying the label.
 
 ## Needs-info template
 
@@ -101,3 +105,19 @@ Capture everything resolved during grilling under "established so far" so the wo
 ## Resuming a previous session
 
 If prior triage notes exist on the issue, read them, check whether the reporter has answered any outstanding questions, and present an updated picture before continuing. Don't re-ask resolved questions.
+
+## Complexity scoring
+
+Score an issue's complexity when proposing a tier in Step 2 and when applying the `ready-for-agent` label in Step 5. Complexity is **not** scored for `needs-triage`, `needs-info`, `ready-for-human`, or `wontfix` issues.
+
+Score on the dominant signal. Bias up (toward `complex`) when uncertain.
+
+| Tier | Signal |
+| --- | --- |
+| `simple` | Single file or isolated module; no new types or public API; mechanical change (rename, copy edit, label tweak, narrow bug fix with confirmed repro); ≤ 2 obvious acceptance criteria. |
+| `medium` | Multiple files but bounded blast radius; new function or internal type that follows existing patterns; 3–5 acceptance criteria; no architectural decision required. |
+| `complex` | Cross-cutting (> 1 subsystem); architectural decision likely (would warrant or update an ADR); novel pattern, new abstraction, or perf/concurrency/security implications; ambiguous criteria. |
+
+**Bug adjustment:** A confirmed repro biases the score down (`simple` or `medium`). A failed repro or insufficient detail biases up (`complex` or `needs-info`).
+
+**Multi-label conflict:** If an issue already carries more than one `complexity:*` label when you are about to apply the outcome, refuse. Name the issue and the conflicting labels, and ask the maintainer to remove the extras before you continue.
