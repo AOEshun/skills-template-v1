@@ -10,6 +10,7 @@ Scaffold the per-repo configuration that the engineering skills assume:
 
 - **Issue tracker** — where issues live (GitHub by default; local markdown is also supported out of the box)
 - **Triage labels** — the strings used for the five canonical triage roles
+- **Complexity labels** — three GitHub labels (`complexity:simple`, `complexity:medium`, `complexity:complex`) used to route issues to the right model tier
 - **Domain docs** — where `CONTEXT.md` and ADRs live, and the consumer rules for reading them
 
 This is a prompt-driven skill, not a deterministic script. Explore, present what you found, confirm with the user, then write.
@@ -57,6 +58,18 @@ The five canonical roles:
 - `wontfix` — will not be actioned
 
 Default: each role's string equals its name. Ask the user if they want to override any. If their issue tracker has no existing labels, the defaults are fine.
+
+**Section B2 — Complexity label vocabulary.**
+
+> Explainer: Some skills route issues to different model tiers based on complexity. Three labels signal this: `complexity:simple` (Haiku), `complexity:medium` (Sonnet), and `complexity:complex` (Opus). If your repo already uses different label names, map them here. Otherwise, accept the defaults.
+
+The three canonical complexity tiers and their default label strings:
+
+- `complexity:simple` → Haiku
+- `complexity:medium` → Sonnet
+- `complexity:complex` → Opus
+
+Default: each tier's label string equals its canonical name. Ask the user if they want to override any. If their issue tracker has no existing complexity labels, the defaults are fine.
 
 **Section C — Domain docs.**
 
@@ -111,10 +124,24 @@ Then write the three docs files using the seed templates in this skill folder as
 - [issue-tracker-github.md](./issue-tracker-github.md) — GitHub issue tracker
 - [issue-tracker-gitlab.md](./issue-tracker-gitlab.md) — GitLab issue tracker
 - [issue-tracker-local.md](./issue-tracker-local.md) — local-markdown issue tracker
-- [triage-labels.md](./triage-labels.md) — label mapping
+- [triage-labels.md](./triage-labels.md) — label mapping (includes the Complexity table)
 - [domain.md](./domain.md) — domain doc consumer rules + layout
 
 For "other" issue trackers, write `docs/agents/issue-tracker.md` from scratch using the user's description.
+
+**Bootstrap complexity labels on GitHub (GitHub issue tracker only).**
+
+After writing the docs files, create the three complexity labels on GitHub if they do not already exist. Use the label strings from the user-confirmed mapping (defaulting to the canonical names). Run each create idempotently — an existing label must not cause an error or a duplicate:
+
+```bash
+gh label create "complexity:simple"  --description "Routed to Haiku"  --color "0E8A16" 2>/dev/null || true
+gh label create "complexity:medium"  --description "Routed to Sonnet" --color "FBCA04" 2>/dev/null || true
+gh label create "complexity:complex" --description "Routed to Opus"   --color "B60205" 2>/dev/null || true
+```
+
+If the user renamed any label in Section B2, substitute the renamed string in place of the canonical name above.
+
+Skip this step for non-GitHub issue trackers (GitLab, local markdown, other). Inform the user that complexity labels must be created manually in their tracker.
 
 ### 5. Done
 
