@@ -1,32 +1,35 @@
 # Triage Labels
 
-The skills speak in terms of six canonical triage roles. This file maps those roles to the actual label strings used in this repo's issue tracker.
+The skills speak in terms of five canonical triage roles. This file maps those roles to the actual label strings used in this repo's issue tracker.
 
-| Label in mattpocock/skills | Label in our tracker    | Meaning                                                        |
-| -------------------------- | ----------------------- | -------------------------------------------------------------- |
-| `needs-triage`             | `needs-triage`          | Maintainer needs to evaluate this issue                        |
-| `needs-info`               | `needs-info`            | Waiting on reporter for more information                       |
-| `ready-for-agent`          | `ready-for-agent`       | Fully specified, ready for an AFK agent                        |
-| `ready-for-tdd-agent`      | `ready-for-tdd-agent`   | Fully specified, ready for a TDD-discipline agent (red→green)  |
-| `ready-for-human`          | `ready-for-human`       | Requires human implementation                                  |
-| `wontfix`                  | `wontfix`               | Will not be actioned                                           |
+| Label in mattpocock/skills | Label in our tracker | Meaning                                  |
+| -------------------------- | -------------------- | ---------------------------------------- |
+| `needs-triage`             | `needs-triage`       | Maintainer needs to evaluate this issue  |
+| `needs-info`               | `needs-info`         | Waiting on reporter for more information |
+| `ready-for-agent`          | `ready-for-agent`    | Fully specified, ready for an AFK agent  |
+| `ready-for-human`          | `ready-for-human`    | Requires human implementation            |
+| `wontfix`                  | `wontfix`            | Will not be actioned                     |
 
 When a skill mentions a role (e.g. "apply the AFK-ready triage label"), use the corresponding label string from this table.
 
-`ready-for-agent` and `ready-for-tdd-agent` are mutually exclusive eligibility labels. Apply `ready-for-tdd-agent` when the issue has clear behavioral acceptance criteria that should be implemented test-first — the `parallel-tdd` skill dispatches this pool. Apply `ready-for-agent` for everything else (refactors, chores, config, one-line fixes) — the `parallel-issues` skill dispatches that pool.
+## TDD Eligibility Label
 
-Edit the right-hand column to match whatever vocabulary you actually use.
+`/parallel-tdd` filters on a separate, additive eligibility label. An issue can carry both `ready-for-agent` and `ready-for-tdd-agent`; the latter signals that the issue is suitable for test-driven development (red→green→refactor on parseable acceptance criteria).
 
-## Complexity
+| Canonical label       | Label in our tracker  | Meaning                                                          |
+| --------------------- | --------------------- | ---------------------------------------------------------------- |
+| `ready-for-tdd-agent` | `ready-for-tdd-agent` | Fully specified AND suitable for TDD discipline (logic-heavy AC) |
 
-The skills use three complexity tiers to route issues to appropriately-capable models. This table maps canonical complexity names to the actual label strings used in this repo's issue tracker and the model each tier dispatches to.
+Apply to issues whose acceptance criteria are testable behaviors (state machines, detectors, sizing/math, persistence). Skip when the AC is dominated by visualization/UX work where unit-test discipline maps poorly.
 
-| Canonical name       | Label in our tracker  | Model dispatched |
-| -------------------- | --------------------- | ---------------- |
-| `complexity:simple`  | `complexity:simple`   | Haiku            |
-| `complexity:medium`  | `complexity:medium`   | Sonnet           |
-| `complexity:complex` | `complexity:complex`  | Opus             |
+## Complexity Labels
 
-When a skill mentions a complexity tier (e.g. "this is a simple issue"), apply the corresponding label string from this table.
+Some skills (e.g. `/parallel-issues`, `/parallel-tdd`) route issues to different model tiers based on complexity. The mapping:
 
-Edit the right-hand column to match whatever label vocabulary you actually use. The canonical names in the left-hand column must not be changed.
+| Canonical label    | Label in our tracker | Model tier |
+| ------------------ | -------------------- | ---------- |
+| `complexity:simple`  | `complexity:simple`  | Haiku      |
+| `complexity:medium`  | `complexity:medium`  | Sonnet     |
+| `complexity:complex` | `complexity:complex` | Opus       |
+
+When a skill needs to pick a model tier from an issue's complexity label, use the corresponding label string from this table.
