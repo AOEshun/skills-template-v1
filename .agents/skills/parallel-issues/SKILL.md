@@ -102,7 +102,7 @@ gh issue list --state closed --json number,title,labels --limit 200
 
 For each open issue, parse:
 
-- **Labels**: extract names. Identify `ready-for-agent`, `ready-for-human`. Also collect any `complexity:*` labels (e.g. `complexity:simple`, `complexity:medium`, `complexity:complex`).
+- **Labels**: extract names. Identify `ready-for-agent`, `ready-for-tdd-agent`, `ready-for-human`. Also collect any `complexity:*` labels (e.g. `complexity:simple`, `complexity:medium`, `complexity:complex`).
 - **Blocked by**: find the `## Blocked by` (case-insensitive) heading, take the next 5 lines, extract every `#N`.
 - **Parent**: find `## Parent`, take the next 3 lines, extract `#N`. Parent references are NOT blockers.
 - **Complexity tier**: from the collected `complexity:*` labels, determine the tier:
@@ -113,6 +113,8 @@ For each open issue, parse:
   - **More than one `complexity:*` label → refuse, name the issue, and exit immediately. Do not dispatch anything.**
 
 If any open `ready-for-agent` issue has a `## Blocked by` section that fails to parse cleanly, refuse and name the issue. Do not silently misclassify.
+
+If any open issue carries both `ready-for-agent` and `ready-for-tdd-agent`, refuse, name the issue, and exit immediately. These labels are mutually exclusive (see `docs/agents/triage-labels.md`); fix the labels via the `triage` skill before re-running. This guard is shared with `parallel-tdd`, which inherits this section.
 
 ### 5. Compute eligibility
 
